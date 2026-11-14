@@ -5,15 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Eric 專案入口</title>
 <style>
-  :root { --bg:#f3f6fb; --card:#fff; --text:#1f2937; --muted:#64748b; --accent:#2563eb; --line:#e2e8f0; --chip:#e8effc; }
+  :root { --bg:#f3f6fb; --card:#fff; --text:#1f2937; --muted:#64748b; --accent:#2563eb; --line:#e2e8f0; --chip:#e8effc; --err:#dc2626; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#0f172a; --card:#1e293b; --text:#e5e7eb; --muted:#94a3b8; --accent:#60a5fa; --line:#334155; --chip:#25324a; }
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e5e7eb; --muted:#94a3b8; --accent:#60a5fa; --line:#334155; --chip:#25324a; --err:#f87171; }
   }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,"Noto Sans TC",sans-serif; background:var(--bg); color:var(--text); }
+  [hidden] { display:none !important; }
+
+  /* 登入 */
+  #login { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .auth-card { width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px; }
+  .auth-card h1 { margin:0 0 4px; font-size:1.4rem; }
+  .auth-card p { margin:0 0 18px; color:var(--muted); font-size:.92rem; }
+  .auth-card label { display:block; font-size:.88rem; margin:12px 0 4px; }
+  .auth-card input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--text); font:inherit; }
+  .auth-card button { width:100%; margin-top:18px; padding:11px; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; cursor:pointer; }
+  .auth-card button:disabled { opacity:.6; cursor:wait; }
+  #err { color:var(--err); font-size:.88rem; min-height:1.2em; margin-top:10px; }
+
+  /* 專案頁 */
   header { max-width:1100px; margin:0 auto; padding:32px 16px 8px; }
-  h1 { margin:0 0 4px; font-size:1.8rem; }
+  .top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  h1.main { margin:0 0 4px; font-size:1.8rem; }
   .sub { color:var(--muted); margin:0 0 16px; }
+  .who { font-size:.85rem; color:var(--muted); text-align:right; }
+  .who button { margin-left:8px; padding:5px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); font:inherit; cursor:pointer; }
   .tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   #q { flex:1 1 240px; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--text); font:inherit; }
   .chip { padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font:inherit; cursor:pointer; }
@@ -22,120 +39,154 @@
   h2 { font-size:1.1rem; margin:28px 0 12px; color:var(--muted); font-weight:600; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:8px; }
-  .card h3 { margin:0; font-size:1.05rem; display:flex; gap:8px; align-items:center; }
+  .card h3 { margin:0; font-size:1.05rem; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .card p { margin:0; color:var(--muted); font-size:.9rem; flex:1; }
   .repo { font-size:.78rem; color:var(--muted); word-break:break-all; }
   .links { display:flex; gap:8px; margin-top:4px; }
   .links a { padding:6px 12px; border-radius:8px; font-size:.88rem; text-decoration:none; border:1px solid var(--line); color:var(--text); }
   .links a.open { background:var(--accent); border-color:var(--accent); color:#fff; }
   .badge { font-size:.72rem; padding:2px 8px; border-radius:999px; background:var(--chip); color:var(--muted); }
-  #empty { display:none; text-align:center; color:var(--muted); padding:40px 0; }
+  #empty { text-align:center; color:var(--muted); padding:40px 16px; }
   footer { text-align:center; color:var(--muted); font-size:.85rem; padding:0 16px 32px; }
 </style>
 </head>
 <body>
-<header>
-  <h1>🗂️ Eric 專案入口</h1>
-  <p class="sub">整合所有 GitHub Pages 網頁，共 <span id="count"></span> 個</p>
-  <div class="tools">
-    <input id="q" type="search" placeholder="搜尋名稱、說明或 repo…" aria-label="搜尋">
-    <span id="chips"></span>
-  </div>
-</header>
-<main id="main"></main>
-<div id="empty">找不到符合的專案</div>
-<footer>資料來源：github.com/ericyeh-arch ・ 新增專案時，只要在 index.html 的 PROJECTS 陣列加一行</footer>
 
+<!-- 登入畫面 -->
+<section id="login" hidden>
+  <form class="auth-card" id="form">
+    <h1>🔐 專案入口</h1>
+    <p>請先登入以檢視專案清單</p>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="pass">密碼</label>
+    <input id="pass" type="password" autocomplete="current-password" required>
+    <div id="err" role="alert"></div>
+    <button id="submit" type="submit">登入</button>
+  </form>
+</section>
+
+<!-- 專案頁（登入後） -->
+<div id="app" hidden>
+  <header>
+    <div class="top">
+      <div>
+        <h1 class="main">🗂️ Eric 專案入口</h1>
+        <p class="sub">整合所有 GitHub Pages 網頁，共 <span id="count">0</span> 個</p>
+      </div>
+      <div class="who"><span id="me"></span><button id="logout" type="button">登出</button></div>
+    </div>
+    <div class="tools">
+      <input id="q" type="search" placeholder="搜尋名稱、說明或 repo…" aria-label="搜尋">
+      <span id="chips"></span>
+    </div>
+  </header>
+  <main id="main"></main>
+  <div id="empty" hidden></div>
+  <footer>資料存放於 Supabase，需登入且在白名單內才可讀取</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const USER = "ericyeh-arch";
 const BASE = `https://${USER}.github.io`;
+// Publishable key 可公開；實際權限由 Supabase 的 RLS 控制
+const sb = supabase.createClient(
+  "https://pjuamlegodbroyfxsmeu.supabase.co",
+  "sb_publishable_E_6_X28Ox302eAf0i8wW2w_2fcWg1Xp"
+);
 
-// repo 為 "" 代表使用者首頁 (ericyeh-arch.github.io)
-const PROJECTS = [
-  // ── 工作系統 ──
-  { cat:"工作系統", icon:"🛠️", name:"線上電腦及網路報修系統", repo:"repair-system", desc:"HTML/CSS/JS + Supabase 的報修單系統" },
-  { cat:"工作系統", icon:"🛠️", name:"線上電腦及網路報修系統（v3）", repo:"v3", desc:"報修系統的另一個版本" },
-  { cat:"工作系統", icon:"📒", name:"資訊中心工作日誌管理系統", repo:"ic-daily-worklog", desc:"每日工作日誌紀錄與管理" },
-  { cat:"工作系統", icon:"☎️", name:"11504 行政與教學分機表", repo:"11504-web", desc:"行政與教學單位分機查詢" },
-  { cat:"工作系統", icon:"📌", name:"智慧電子公佈欄", repo:"b1", desc:"board・電子公佈欄" },
-  { cat:"工作系統", icon:"🔐", name:"ISMS 文件總覽", repo:"isms-docs", desc:"資訊安全管理制度文件" },
+const $ = id => document.getElementById(id);
+let PROJECTS = [], cats = ["全部"], activeCat = "全部";
 
-  // ── 工具 ──
-  { cat:"工具", icon:"🌤️", name:"即時天氣紀錄", repo:"weather-supabase", desc:"Open-Meteo 天氣，並寫入 Supabase 資料庫" },
-  { cat:"工具", icon:"📷", name:"條碼 / QR Code 掃描器", repo:"barcode-scanner", desc:"網頁版條碼與 QR Code 掃描" },
-  { cat:"工具", icon:"⚖️", name:"BMI 計算器", repo:"bmi", desc:"身體質量指數計算" },
-  { cat:"工具", icon:"🧮", name:"計算機", repo:"calculator-web", desc:"網頁計算機" },
-  { cat:"工具", icon:"🔮", name:"VibeMinutes AI 會議智能秘書", repo:"meet", desc:"AI 會議紀錄助手 (vibe001)" },
-  { cat:"工具", icon:"💬", name:"留言板 Guestbook", repo:"guestbook", desc:"訪客留言板" },
+const url = p => p.repo ? `${BASE}/${p.repo}/` : `${BASE}/`;
+const src = p => `https://github.com/${USER}/${p.repo || USER + ".github.io"}`;
 
-  // ── 個人 ──
-  { cat:"個人", icon:"👤", name:"Eric Yeh｜校園網路與系統維運", repo:"landing-page", desc:"個人履歷落地頁" },
-  { cat:"個人", icon:"📄", name:"eric yeh | Resume", repo:"p1", desc:"個人履歷" },
-  { cat:"個人", icon:"👋", name:"ntsu01 自我介紹", repo:"ntsu01", desc:"自我介紹頁（範本）" },
+/* ---------- 畫面切換 ---------- */
+function showLogin() { $("app").hidden = true; $("login").hidden = false; $("pass").value = ""; }
+function showApp()   { $("login").hidden = true; $("app").hidden = false; }
 
-  // ── 課程教學 ──
-  { cat:"課程教學", icon:"🎓", name:"Vibe Coding 課程教學網站", repo:"", desc:"龍華科大課程教材（需要登入）", badge:"需登入" },
-  { cat:"課程教學", icon:"🤖", name:"AI 概論初級班", repo:"v2", desc:"AI 概論課程網站" },
-  { cat:"課程教學", icon:"🤖", name:"AI 概論初級班（demo）", repo:"demo", desc:"AI 概論課程的示範版本" },
-  { cat:"課程教學", icon:"🧭", name:"Vibe Code 網頁上架互動指南", repo:"vibe", desc:"網頁上架到 GitHub Pages 的互動教學" },
-  { cat:"課程教學", icon:"🗓️", name:"2026/05/16 早上課程大綱", repo:"github", desc:"當日課程大綱" },
-  { cat:"課程教學", icon:"🐍", name:"Python 大數據分析與資料探勘", repo:"__2026_05_09_chihlee_python__", desc:"115上 新北 Python 課程（fork）" },
-  { cat:"課程教學", icon:"☸️", name:"Kubernetes 課程網站", repo:"k8s-course-site", desc:"K8s 學習網站" },
+/* ---------- 讀取專案 ---------- */
+async function loadProjects(session) {
+  showApp();
+  $("me").textContent = session.user.email;
+  const { data, error } = await sb.from("projects").select("*").order("sort");
+  const empty = $("empty");
+  if (error) { empty.hidden = false; empty.textContent = "讀取失敗：" + error.message; return; }
+  if (!data.length) {
+    empty.hidden = false;
+    empty.textContent = "此帳號沒有權限檢視專案清單（不在白名單內）。";
+    $("main").replaceChildren(); $("count").textContent = 0; return;
+  }
+  empty.hidden = true;
+  PROJECTS = data;
+  cats = ["全部", ...new Set(data.map(p => p.cat))];
+  $("count").textContent = data.length;
+  buildChips(); render();
+}
 
-  // ── 其他 ──
-  { cat:"其他", icon:"🔀", name:"SEC 轉址", repo:"sec", desc:"SEC redirect site" },
-  { cat:"其他", icon:"💻", name:"CoolCoder", repo:"CoolCoder", desc:"CoolCoder 網站" },
-];
-
-const url  = p => p.repo ? `${BASE}/${p.repo}/` : `${BASE}/`;
-const src  = p => `https://github.com/${USER}/${p.repo || USER + ".github.io"}`;
-const cats = ["全部", ...new Set(PROJECTS.map(p => p.cat))];
-let activeCat = "全部";
-
-document.getElementById("count").textContent = PROJECTS.length;
-const chips = document.getElementById("chips");
-cats.forEach(c => {
-  const b = document.createElement("button");
-  b.className = "chip"; b.textContent = c; b.dataset.cat = c;
-  b.setAttribute("aria-pressed", c === activeCat);
-  b.onclick = () => { activeCat = c; chips.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.cat === c)); render(); };
-  chips.append(b);
-});
+function buildChips() {
+  const chips = $("chips"); chips.replaceChildren();
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = c; b.dataset.cat = c;
+    b.setAttribute("aria-pressed", c === activeCat);
+    b.onclick = () => { activeCat = c; chips.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.cat === c)); render(); };
+    chips.append(b);
+  });
+}
 
 function card(p) {
   const el = document.createElement("article"); el.className = "card";
-  const h = document.createElement("h3"); h.textContent = `${p.icon} ${p.name}`;
+  const h = document.createElement("h3"); h.textContent = `${p.icon || ""} ${p.name}`;
   if (p.badge) { const s = document.createElement("span"); s.className = "badge"; s.textContent = p.badge; h.append(s); }
-  const d = document.createElement("p"); d.textContent = p.desc;
+  const d = document.createElement("p"); d.textContent = p.description || "";
   const r = document.createElement("div"); r.className = "repo"; r.textContent = url(p).replace("https://", "");
   const l = document.createElement("div"); l.className = "links";
-  const a1 = Object.assign(document.createElement("a"), { href:url(p), target:"_blank", rel:"noopener", className:"open", textContent:"開啟網頁" });
-  const a2 = Object.assign(document.createElement("a"), { href:src(p), target:"_blank", rel:"noopener", textContent:"原始碼" });
-  l.append(a1, a2);
+  l.append(
+    Object.assign(document.createElement("a"), { href:url(p), target:"_blank", rel:"noopener", className:"open", textContent:"開啟網頁" }),
+    Object.assign(document.createElement("a"), { href:src(p), target:"_blank", rel:"noopener", textContent:"原始碼" })
+  );
   el.append(h, d, r, l);
   return el;
 }
 
 function render() {
-  const q = document.getElementById("q").value.trim().toLowerCase();
-  const main = document.getElementById("main");
-  main.replaceChildren();
+  const q = $("q").value.trim().toLowerCase();
+  const main = $("main"); main.replaceChildren();
   let shown = 0;
   for (const c of cats.slice(1)) {
     if (activeCat !== "全部" && activeCat !== c) continue;
     const items = PROJECTS.filter(p => p.cat === c &&
-      (!q || [p.name, p.desc, p.repo, p.cat].join(" ").toLowerCase().includes(q)));
+      (!q || [p.name, p.description, p.repo, p.cat].join(" ").toLowerCase().includes(q)));
     if (!items.length) continue;
     const h = document.createElement("h2"); h.textContent = `${c}（${items.length}）`;
     const g = document.createElement("div"); g.className = "grid";
     items.forEach(p => g.append(card(p)));
-    main.append(h, g);
-    shown += items.length;
+    main.append(h, g); shown += items.length;
   }
-  document.getElementById("empty").style.display = shown ? "none" : "block";
+  const empty = $("empty");
+  empty.hidden = shown > 0;
+  if (!shown) empty.textContent = "找不到符合的專案";
 }
-document.getElementById("q").addEventListener("input", render);
-render();
+$("q").addEventListener("input", render);
+
+/* ---------- 登入 / 登出 ---------- */
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("err").textContent = ""; $("submit").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("pass").value });
+  $("submit").disabled = false;
+  if (error) { $("err").textContent = "登入失敗：Email 或密碼不正確"; $("pass").select(); }
+  // 成功時由 onAuthStateChange 切換畫面
+});
+$("logout").addEventListener("click", () => sb.auth.signOut());
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) setTimeout(() => loadProjects(session), 0);
+  else { PROJECTS = []; showLogin(); }
+});
+sb.auth.getSession().then(({ data }) => { if (!data.session) showLogin(); });
 </script>
 </body>
 </html>
